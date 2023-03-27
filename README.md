@@ -27,7 +27,7 @@ To build the program, you will need to use CMake. Here are the steps:
 
 Open a terminal and navigate to the root directory of the project.
 
-- Create a build directory: ``mkdir src/build && cd src/build``
+- Create a build directory: ``mkdir ./build && cd ./build``
 - Run CMake to generate the build files: ``cmake ..``
 - Build the program: ``make``
 

@@ -31,7 +31,6 @@ int main(int argc, char **argv) {
   }
 
   // Print some information about the input file
-  std::cout << "Input file: " << argv[1] << std::endl;
   av_dump_format(format_ctx, 0, argv[1], 0);
 
   // Clean up
