@@ -1,3 +1,13 @@
+# ppm files
+*.ppm
+
+# Build paths
+bin/
+build/
+*.mp4
+.tmp/
+.cache/
+
 # Prerequisites
 *.d
 
