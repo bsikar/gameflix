@@ -48,14 +48,3 @@ target_include_directories(gameflix PRIVATE ${SRC_DIR})
 set_target_properties(gameflix PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR}
         )
-
-# Create a custom target called "copy_assets" that copies the assets directory to the binary directory
-add_custom_target(copy_assets ALL
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_DIR} ${BIN_DIR}
-        )
-
-# Create a custom command that copies the assets directory to the binary directory after building the "gameflix" target
-add_custom_command(TARGET gameflix POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_DIR} ${BIN_DIR}
-        )
-

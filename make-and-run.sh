@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # This script is meant to do the following
 # ** note that this script is not supported
 # but this might work and I (and the other developers)
@@ -82,6 +84,6 @@ cd ..
 if [[ -z "$gameflix_flags" ]]; then
   ./bin/gameflix
 else
-  ./bin/gameflix "${gameflix_flags[@]}"
+  ./bin/gameflix ${gameflix_flags[@]}
 fi
 

@@ -1,0 +1,67 @@
+/*
+ * Constructors:
+ * -----------------------------------------------------------------------------
+ * 1. Default Constructor: This is a constructor that takes no arguments. It is
+ * used to create an object with default values for all its data members. If no
+ * default constructor is provided by the programmer, the compiler will generate
+ * one automatically.
+ *
+ * Frame f; // creates a new Frame object with default values
+ * Video v; // creates a new Video object with default values
+ *
+ * -----------------------------------------------------------------------------
+ * 2. Parameterized Constructor: This is a constructor that takes one or more
+ * arguments. It is used to create an object with specific initial values for
+ * its data members.
+ *
+ * Frame f(800, 600, 30); // creates a new Frame object with specified values
+ * Video v(24.0f, 800, 600); // creates a new Video object with specified values
+ *
+ * -----------------------------------------------------------------------------
+ * 3. Copy Constructor: This is a constructor that takes a reference to an
+ * object of the same class as an argument. It is used to create a new object
+ * with the same values as the argument object.
+ *
+ * Frame f1(800, 600, 30);
+ * Frame f2 = f1; // creates a new Frame object with the same values as f1
+ * Video v1(24.0f, 800, 600);
+ * Video v2 = v1; // creates a new Video object with the same values as v1
+ *
+ * -----------------------------------------------------------------------------
+ * 4. Move Constructor: This is a constructor that takes an rvalue reference to
+ * an object of the same class as an argument. It is used to create a new object
+ * by "stealing" the resources (e.g., memory) owned by the argument object.
+ *
+ * Frame f1(800, 600, 30);
+ * Frame f2 = std::move(f1); // moves the resources owned by f1 to f2
+ * Video v1(24.0f, 800, 600);
+ * Video v2 = std::move(v1); // moves the resources owned by v1 to v2
+ *
+ * -----------------------------------------------------------------------------
+ * 5. Destructor: This is a special member function that is called when an
+ * object is destroyed (e.g., when it goes out of scope). It is used to clean up
+ * any resources owned by the object (e.g., memory allocated on the heap).
+ *
+ *
+ * {
+ *     Frame f(800, 600, 30);
+ *     // do some stuff with f...
+ * } // f's destructor is called automatically when it goes out of scope
+ * {
+ *     Video v(24.0f, 800, 600);
+ *     // do some stuff with v...
+ * } // v's destructor is called automatically when it goes out of scope
+ *
+ * -----------------------------------------------------------------------------
+ * Operator= functions:
+ * 1. Copy Assignment Operator: This is an overloaded operator that takes a
+ * reference to an object of the same class as an argument. It is used to copy
+ * the values of the argument object into the calling object.
+ *
+ * 2. Move Assignment Operator: This is an overloaded operator that takes an
+ * rvalue reference to an object of the same class as an argument. It is used to
+ * "steal" the resources (e.g., memory) owned by the argument object and
+ * transfer them to the calling object. The `noexcept` specifier indicates that
+ * this function will not throw any exceptions during execution.
+ */
+
