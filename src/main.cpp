@@ -9,9 +9,106 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-// I got the base of this code from a github issue comment, but I cannot find it
-// anymore... I am going to change this code anyways later and their code was
-// deprecated
+void save_video_to_frames(AVCodecContext *video_decoder_context,
+                          AVStream *video_stream,
+                          AVFormatContext *input_format_context) {
+  int ret, frame_count = 0;
+  AVFrame *frame = av_frame_alloc();
+  AVPacket *pkt = av_packet_alloc();
+  if (!frame || !pkt) {
+    fprintf(stderr, "Failed to allocate frame or packet\n");
+    exit(1);
+  }
+
+  // Initialize the scaler context to convert video frames to RGB
+  SwsContext *sws_ctx = sws_getContext(
+      video_decoder_context->width, video_decoder_context->height,
+      video_decoder_context->pix_fmt, video_decoder_context->width,
+      video_decoder_context->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL,
+      NULL);
+  if (!sws_ctx) {
+    fprintf(stderr, "Failed to initialize scaler context\n");
+    exit(1);
+  }
+
+  // Open the output file
+  char output_filename[1024];
+  snprintf(output_filename, sizeof(output_filename), "frame-%d.ppm",
+           frame_count);
+  FILE *output_file = fopen(output_filename, "wb");
+  if (!output_file) {
+    fprintf(stderr, "Failed to open output file\n");
+    exit(1);
+  }
+
+  // Write the PPM header to the output file
+  fprintf(output_file, "P6\n%d %d\n255\n", video_decoder_context->width,
+          video_decoder_context->height);
+
+  while (av_read_frame(input_format_context, pkt) >= 0) {
+    if (pkt->stream_index != video_stream->index) {
+      av_packet_unref(pkt);
+      continue;
+    }
+
+    ret = avcodec_send_packet(video_decoder_context, pkt);
+    if (ret < 0) {
+      fprintf(stderr, "Error sending a packet for decoding\n");
+      exit(1);
+    }
+
+    while (ret >= 0) {
+      ret = avcodec_receive_frame(video_decoder_context, frame);
+      if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+        break;
+      else if (ret < 0) {
+        fprintf(stderr, "Error during decoding\n");
+        exit(1);
+      }
+
+      // Convert the frame to RGB and save it to file
+      uint8_t *rgb_buffer = (uint8_t *)malloc(
+          video_decoder_context->width * video_decoder_context->height * 3);
+      if (!rgb_buffer) {
+        fprintf(stderr, "Failed to allocate RGB buffer\n");
+        exit(1);
+      }
+      int linesize = video_decoder_context->width * 3;
+      sws_scale(sws_ctx, frame->data, frame->linesize, 0,
+                video_decoder_context->height, &rgb_buffer, &linesize);
+
+      // Write the RGB buffer to the output file
+      fwrite(rgb_buffer, 1,
+             video_decoder_context->width * video_decoder_context->height * 3,
+             output_file);
+      fflush(output_file);
+
+      // Increment frame count and update output filename
+      frame_count++;
+      snprintf(output_filename, sizeof(output_filename), "frame-%d.ppm",
+               frame_count);
+
+      // Close the current output file and open the new one
+      fclose(output_file);
+      output_file = fopen(output_filename, "wb");
+
+      // Write the PPM header to the new output file
+      fprintf(output_file, "P6\n%d %d\n255\n", video_decoder_context->width,
+              video_decoder_context->height);
+
+      // Free the RGB buffer
+      free(rgb_buffer);
+    }
+
+    av_packet_unref(pkt);
+  }
+
+  // Close the output file and free memory
+  fclose(output_file);
+  av_frame_free(&frame);
+  av_packet_free(&pkt);
+  sws_freeContext(sws_ctx);
+}
 
 int main(int argc, char **argv) {
   // Check if the correct number of command line arguments were provided
@@ -88,28 +185,34 @@ int main(int argc, char **argv) {
   }
 
   // print input video stream information
-  std::cout << "Input file: " << input_file_name << "\n"
-            << "Format: " << input_format_context->iformat->name << "\n"
-            << "Video codec: " << video_codec->name << "\n"
-            << "Resolution: " << video_stream->codecpar->width << 'x'
-            << video_stream->codecpar->height << "\n"
-            << "Frame rate: " << av_q2d(video_stream->avg_frame_rate)
-            << " [fps]\n"
-            << "Duration: "
-            << av_rescale_q(video_stream->duration, video_stream->time_base,
-                            {1, AV_TIME_BASE}) /
-                   AV_TIME_BASE
-            << " [sec]\n"
-            << "Pixel format: "
-            << av_get_pix_fmt_name(
-                   static_cast<AVPixelFormat>(video_stream->codecpar->format))
-            << "\n"
-            << "Number of frames: " << video_stream->nb_frames << "\n"
+  std::string file_format_name = input_format_context->iformat->name;
+  std::string codec_name = video_codec->name;
+  int width = video_stream->codecpar->width;
+  int height = video_stream->codecpar->height;
+  int frame_rate = av_q2d(video_stream->avg_frame_rate);
+  int duration = av_rescale_q(video_stream->duration, video_stream->time_base,
+                              {1, AV_TIME_BASE}) /
+                 AV_TIME_BASE;
+  std::string pixel_format_name = av_get_pix_fmt_name(
+      static_cast<AVPixelFormat>(video_stream->codecpar->format));
+  int frame_count = video_stream->nb_frames;
+
+  std::cout << "Input file: " << input_file_name << std::endl
+            << "Format: " << file_format_name << std::endl
+            << "Video codec: " << video_codec << std::endl
+            << "Resolution: " << width << 'x' << height << std::endl
+            << "Frame rate: " << frame_rate << " [fps]" << std::endl
+            << "Duration: " << duration << " [sec]" << std::endl
+            << "Pixel format: " << pixel_format_name << std::endl
+            << "Number of frames: " << frame_count << std::endl
             << std::flush;
 
-  // clean up
-  avformat_close_input(&input_format_context);
+  save_video_to_frames(video_decoder_context, video_stream,
+                       input_format_context);
+
+  // Free the allocated resources
   avcodec_free_context(&video_decoder_context);
+  avformat_close_input(&input_format_context);
 
   return 0;
 }
