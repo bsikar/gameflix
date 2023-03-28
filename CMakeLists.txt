@@ -26,8 +26,15 @@ file(GLOB_RECURSE HEADER_FILES ${SRC_DIR}/*.h)
 # Create an executable target called "gameflix" using the source and header files
 add_executable(gameflix ${SRC_FILES} ${HEADER_FILES})
 
+# Use pkg-config to locate the necessary FFmpeg libraries and header files
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavutil libswresample)
+
 # Link the necessary libraries to the target
-target_link_libraries(gameflix avformat avcodec avutil swresample)
+target_link_libraries(gameflix ${FFMPEG_LIBRARIES})
+
+# Include the necessary header files
+target_include_directories(gameflix PRIVATE ${FFMPEG_INCLUDE_DIRS})
 
 # Set the target properties for the "gameflix" executable, including the output directory
 set_target_properties(gameflix PROPERTIES
