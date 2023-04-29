@@ -30,12 +30,19 @@ add_executable(gameflix ${SRC_FILES} ${HEADER_FILES})
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFMPEG REQUIRED libavformat libavcodec libavutil libswresample)
 
+# Set up GTest
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
+# Set up Boost
+find_package(Boost COMPONENTS system filesystem REQUIRED)
+include_directories(${BOOST_INCLUDE_DIRS})
+
 # Link the necessary libraries to the target
 target_link_libraries(gameflix ${FFMPEG_LIBRARIES} swscale)
 
-
 # Include the necessary header files
-target_include_directories(gameflix PRIVATE ${FFMPEG_INCLUDE_DIRS})
+target_include_directories(gameflix PRIVATE ${FFMPEG_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS} ${BOOST_INCLUDE_DIRS})
 
 # Set the target properties for the "gameflix" executable, including the output directory
 set_target_properties(gameflix PROPERTIES
@@ -49,3 +56,5 @@ target_include_directories(gameflix PRIVATE ${SRC_DIR})
 set_target_properties(gameflix PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR}
         )
+
+

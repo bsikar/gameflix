@@ -1,3 +1,4 @@
+#include "Gameflix.hpp"
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -213,60 +214,8 @@ int main(int argc, char **argv) {
   // Set the log level to debug
   av_log_set_level(AV_LOG_DEBUG);
 
-  // Open the input file context
-  AVFormatContext *input_format_context = nullptr;
-  int result = avformat_open_input(&input_format_context,
-                                   input_file_name.c_str(), nullptr, nullptr);
-  if (result < 0) {
-    std::cerr << "Failed to open input file \"" << input_file_name
-              << "\": error code=" << result << std::endl;
-    return 2;
-  }
+  std::cout << input_file_name << std::endl;
+  Gameflix *gameflix = new Gameflix(input_file_name);
 
-  // Retrieve information about the input streams
-  result = avformat_find_stream_info(input_format_context, nullptr);
-  if (result < 0) {
-    std::cerr << "Failed to retrieve input stream information: error code="
-              << result << std::endl;
-    return 2;
-  }
-
-  // Find the primary video stream
-  AVCodec *video_codec = nullptr;
-  result = av_find_best_stream(input_format_context, AVMEDIA_TYPE_VIDEO, -1, -1,
-                               &video_codec, 0);
-  if (result < 0) {
-    std::cerr << "Failed to find primary video stream: error code=" << result
-              << std::endl;
-    return 2;
-  }
-
-  // Get the index of the primary video stream and a pointer to the stream
-  const int video_stream_index = result;
-  AVStream *video_stream = input_format_context->streams[video_stream_index];
-
-  // Open the video decoder context and check for errors
-  AVCodecContext *video_decoder_context =
-      open_video_decoder_context(video_codec, video_stream);
-  if (!video_decoder_context) {
-    avformat_close_input(&input_format_context);
-    return 2;
-  }
-
-  // Print input video stream information
-  print_video_stream_info(input_format_context, video_codec, video_stream);
-
-  // Save video to frames and check for errors
-  result = save_video_to_frames(video_decoder_context, video_stream,
-                                input_format_context);
-  if (result < 0) {
-    avcodec_free_context(&video_decoder_context);
-    avformat_close_input(&input_format_context);
-    return 2;
-  }
-
-  // Free allocated resources and exit
-  avcodec_free_context(&video_decoder_context);
-  avformat_close_input(&input_format_context);
   return 0;
 }
