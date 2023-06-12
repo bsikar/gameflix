@@ -49,12 +49,14 @@ do
                 brew install "$dependency"
                 ;;
             Linux)
-                if [[ "$dependency" == "ninja" ]]; then
-                  dependency="ninja-build"
-                elif [[ "$dependency" == "ffmpeg" ]]; then
-		  dependency="ffmpeg libavformat-dev"
-		fi
-                sudo apt-get update -y && sudo apt-get install -y "$dependency"
+                if [[ -n $(command -v apt-get) ]]; then
+                    sudo apt-get update -y && sudo apt-get install -y "$dependency"
+                elif [[ -n $(command -v pacman) ]]; then
+                    sudo pacman -Sy --noconfirm "$dependency"
+                else
+                    echo "Unsupported package manager or distribution."
+                    exit 1
+                fi
                 ;;
             *)
                 echo "Unsupported operating system."
@@ -82,8 +84,7 @@ cd ..
 # Execute the `./bin/gameflix` binary with user-provided flags
 # check if the gameflix_flags are empty
 if [[ -z "$gameflix_flags" ]]; then
-  ./bin/gameflix
+    ./bin/gameflix
 else
-  ./bin/gameflix ${gameflix_flags[@]}
+    ./bin/gameflix ${gameflix_flags[@]}
 fi
-
