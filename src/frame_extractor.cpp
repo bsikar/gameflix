@@ -44,26 +44,9 @@ FrameExtractor::~FrameExtractor() {
   avformat_close_input(&format_context);
 }
 
-void FrameExtractor::extract_frames(const std::string &output_dir) {
+void FrameExtractor::extract_frames(const std::string &output_dir, int width) {
   AVPacket packet;
   AVFrame *frame = av_frame_alloc();
-
-  // Calculate the total number of frames
-  int total_frames = 0;
-  while (av_read_frame(format_context, &packet) >= 0) {
-    if (packet.stream_index == video_stream_index) {
-      total_frames += 1;
-    }
-    av_packet_unref(&packet);
-  }
-  av_seek_frame(format_context, video_stream_index, 0, AVSEEK_FLAG_BACKWARD);
-
-  // Determine the width for leading zeros
-  int width = 1;
-  int temp = total_frames;
-  while (temp /= 10) {
-    width += 1;
-  }
 
   // Step 1: Read packets from the format context until the end of
   // the video stream is reached

@@ -4,8 +4,9 @@
 # Build paths
 bin/
 build/
-output/
+output.*
 .tmp/
+.cache/
 
 # Prerequisites
 *.d

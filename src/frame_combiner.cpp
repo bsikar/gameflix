@@ -25,7 +25,7 @@ FrameCombiner::~FrameCombiner() { cleanup_resources(); }
 
 void FrameCombiner::combine_frames_to_video(
     const std::string &output_filename) {
-  av_log_set_level(AV_LOG_DEBUG);
+  //av_log_set_level(AV_LOG_DEBUG);
 
   setup_video_codec();
 
@@ -106,6 +106,7 @@ void FrameCombiner::open_output_file(const std::string &output_filename) {
 
 void FrameCombiner::setup_video_codec() {
   // Find the video encoder
+  // TESTING
   const AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_H264);
   if (!codec) {
     std::cerr << "Failed to find the video encoder." << std::endl;
@@ -120,12 +121,11 @@ void FrameCombiner::setup_video_codec() {
   }
 
   // Set the codec parameters
-  codec_context_->bit_rate = 400000;
-  // codec_context_->width = 1920;
-  codec_context_->width = 1280;
+  codec_context_->bit_rate = 8000000;
+  codec_context_->width = 1920;
   codec_context_->height = 1080;
-  codec_context_->time_base = {1, 25};
-  codec_context_->framerate = {25, 1};
+  codec_context_->time_base = {1, 30};
+  codec_context_->framerate = {30, 1};
   codec_context_->gop_size = 10;
   codec_context_->max_b_frames = 1;
   codec_context_->pix_fmt = AV_PIX_FMT_YUV420P;
@@ -257,8 +257,6 @@ void FrameCombiner::process_frames() {
 
 void FrameCombiner::convert_pngs_to_frames() {
   unsigned int i = 0;
-  std::cout << "here" << std::endl;
-
   for (const auto &png_file : png_files) {
     // Convert PNG to AVFrame
     AVFrame *frame = convert_png_to_av_frame(png_file);
