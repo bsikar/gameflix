@@ -20,13 +20,13 @@ FrameExtractor::FrameExtractor(const std::string &video_path)
   // Step 1: Retrieve the stream information from the video file
   if (avformat_open_input(&format_context, video_path.c_str(), nullptr,
                           nullptr) != 0) {
-    throw std::runtime_error("[ERROR] Failed to open video file.");
+    throw std::runtime_error("Failed to open video file.");
   }
 
   // Step 2: Retrieve the stream information from the video file
   if (avformat_find_stream_info(format_context, nullptr) < 0) {
     avformat_close_input(&format_context);
-    throw std::runtime_error("[ERROR] Failed to retrieve stream information.");
+    throw std::runtime_error("Failed to retrieve stream information.");
   }
 
   // Step 3: Find the video stream in the format context
@@ -46,32 +46,51 @@ FrameExtractor::~FrameExtractor() {
 
 void FrameExtractor::extract_frames(const std::string &output_dir) {
   AVPacket packet;
-  // must be freed with av_frame_free();
   AVFrame *frame = av_frame_alloc();
+
+  // Calculate the total number of frames
+  int total_frames = 0;
+  while (av_read_frame(format_context, &packet) >= 0) {
+    if (packet.stream_index == video_stream_index) {
+      total_frames += 1;
+    }
+    av_packet_unref(&packet);
+  }
+  av_seek_frame(format_context, video_stream_index, 0, AVSEEK_FLAG_BACKWARD);
+
+  // Determine the width for leading zeros
+  int width = 1;
+  int temp = total_frames;
+  while (temp /= 10) {
+    width += 1;
+  }
 
   // Step 1: Read packets from the format context until the end of
   // the video stream is reached
+  int frame_count = 0;
   while (av_read_frame(format_context, &packet) >= 0) {
     // Step 2: Send packets to the codec context for decoding and
     // receive frames
     if (packet.stream_index == video_stream_index) {
-      // get the packet to iter the frames
       avcodec_send_packet(codec_context, &packet);
 
       for (; avcodec_receive_frame(codec_context, frame) == 0; frame_count++) {
-        // Step 3: Save each receive frame as an image file in the
-        // output directory
-        std::string frame_path =
-            output_dir + "/frame_" + std::to_string(frame_count) + ".png";
+        // Step 3: Save each received frame as an image file in the
+        // output directory with leading zeros in the filename
+        std::stringstream frame_path_ss;
+        frame_path_ss << output_dir << "/frame_" << std::setfill('0')
+                      << std::setw(width) << frame_count << "_" << this
+                      << ".png";
+
+        std::string frame_path = frame_path_ss.str();
+
         save_frame_as_image(frame, frame_path);
         std::cout << "[INFO] Processed " << frame_path << std::endl;
       }
     }
-    // no need for the packet anymore
     av_packet_unref(&packet);
   }
 
-  // no need for the frame anymore
   av_frame_free(&frame);
 }
 
@@ -85,7 +104,7 @@ void FrameExtractor::find_video_stream() {
   }
 
   if (video_stream_index == -1) {
-    throw std::runtime_error("[ERROR] Failed to find video stream.");
+    throw std::runtime_error("Failed to find video stream.");
   }
 }
 
@@ -94,7 +113,7 @@ void FrameExtractor::init_video_codec() {
   codec_context = avcodec_alloc_context3(nullptr);
 
   if (!codec_context) {
-    throw std::runtime_error("[ERROR] Failed to allocated codec context.");
+    throw std::runtime_error("Failed to allocated codec context.");
   }
 
   const auto *codecpars = format_context->streams[video_stream_index]->codecpar;
@@ -103,7 +122,7 @@ void FrameExtractor::init_video_codec() {
 
   if (params_result < 0) {
     avcodec_free_context(&codec_context);
-    throw std::runtime_error("[ERROR] Failed to find video decoder.");
+    throw std::runtime_error("Failed to find video decoder.");
   }
 
   codec = const_cast<AVCodec *>(avcodec_find_decoder(codec_context->codec_id));
@@ -111,7 +130,7 @@ void FrameExtractor::init_video_codec() {
 
   if (init_result < 0) {
     avcodec_free_context(&codec_context);
-    throw std::runtime_error("[ERROR] Failed to open video codec.");
+    throw std::runtime_error("Failed to open video codec.");
   }
 }
 
@@ -121,14 +140,14 @@ void FrameExtractor::save_frame_as_image(AVFrame *frame,
   AVCodec *png_codec =
       const_cast<AVCodec *>(avcodec_find_encoder(AV_CODEC_ID_PNG));
   if (!png_codec) {
-    throw std::runtime_error("[ERROR] Failed to find PNG codec.");
+    throw std::runtime_error("Failed to find PNG codec.");
   }
 
   // Allocate and initialize the PNG codec context
   // needs to be freed with avcodec_free_context();
   AVCodecContext *png_codec_context = avcodec_alloc_context3(png_codec);
   if (!png_codec_context) {
-    throw std::runtime_error("[ERROR] Failed to allocate PNG codec context.");
+    throw std::runtime_error("Failed to allocate PNG codec context.");
   }
 
   // Set the PNG codec parameters
@@ -140,14 +159,14 @@ void FrameExtractor::save_frame_as_image(AVFrame *frame,
 
   if (avcodec_open2(png_codec_context, png_codec, nullptr) < 0) {
     avcodec_free_context(&png_codec_context);
-    throw std::runtime_error("[ERROR] Failed to open PNG codec.");
+    throw std::runtime_error("Failed to open PNG codec.");
   }
 
   // Step 2: Create a temporary frame for the PNG conversion
   AVFrame *png_frame = av_frame_alloc();
   if (!png_frame) {
     avcodec_free_context(&png_codec_context);
-    throw std::runtime_error("[ERROR] Failed to allocate PNG frame.");
+    throw std::runtime_error("Failed to allocate PNG frame.");
   }
   png_frame->format = png_codec_context->pix_fmt;
   png_frame->width = png_codec_context->width;
@@ -156,7 +175,7 @@ void FrameExtractor::save_frame_as_image(AVFrame *frame,
   if (av_frame_get_buffer(png_frame, 0) < 0) {
     av_frame_free(&png_frame);
     avcodec_free_context(&png_codec_context);
-    throw std::runtime_error("[ERROR] Failed to allocate PNG frame buffer.");
+    throw std::runtime_error("Failed to allocate PNG frame buffer.");
   }
 
   // Convert the input frame to the PNG pixel format
@@ -168,8 +187,7 @@ void FrameExtractor::save_frame_as_image(AVFrame *frame,
   if (!sws_context) {
     av_frame_free(&png_frame);
     avcodec_free_context(&png_codec_context);
-    throw std::runtime_error(
-        "[ERROR] Failed to create frame conversion context.");
+    throw std::runtime_error("Failed to create frame conversion context.");
   }
 
   sws_scale(sws_context, frame->data, frame->linesize, 0, frame->height,
@@ -182,7 +200,7 @@ void FrameExtractor::save_frame_as_image(AVFrame *frame,
   if (!output_file) {
     av_frame_free(&png_frame);
     avcodec_free_context(&png_codec_context);
-    throw std::runtime_error("[ERROR] Failed to open output file.");
+    throw std::runtime_error("Failed to open output file.");
   }
 
   // Encode the PNG frame and write the data to the output file
@@ -190,7 +208,7 @@ void FrameExtractor::save_frame_as_image(AVFrame *frame,
   if (!png_packet) {
     av_frame_free(&png_frame);
     avcodec_free_context(&png_codec_context);
-    throw std::runtime_error("[ERROR] Failed to allocate PNG packet.");
+    throw std::runtime_error("Failed to allocate PNG packet.");
   }
 
   const auto frame_result = avcodec_send_frame(png_codec_context, png_frame);

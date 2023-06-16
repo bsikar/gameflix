@@ -7,8 +7,12 @@ project(Gameflix)
 # Set the C++ standard to 17
 set(CMAKE_CXX_STANDARD 17)
 
-# Add compiler flags to the C++ compiler
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wno-unused -Wno-unused-parameter -Wno-unused-function -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-unused-lambda-capture -Wno-c++17-extensions -Wno-gnu-zero-variadic-macro-arguments -std=c++17 -O3 -g -fsanitize=address,undefined")
+# Add compiler flags to the C++ compiler for debug mode
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wpedantic -pedantic -pedantic-errors -Wno-unused -Wno-unused-parameter -Wno-unused-function -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-unused-lambda-capture -Wno-c++17-extensions -Wno-gnu-zero-variadic-macro-arguments -std=c++17 -Og -g3")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wpedantic -pedantic -pedantic-errors -Wno-unused -Wno-unused-parameter -Wno-unused-function -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-unused-lambda-capture -Wno-c++17-extensions -Wno-gnu-zero-variadic-macro-arguments -std=c++17 -Og -g3 -fsanitize=address,undefined")
+
+# Add compiler flags to the C++ compiler for release mode
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wpedantic -pedantic -pedantic-errors -Wno-unused -Wno-unused-parameter -Wno-unused-function -Wno-c++98-compat -Wno-exit-time-destructors -Wno-global-constructors -Wno-unused-lambda-capture -Wno-c++17-extensions -Wno-gnu-zero-variadic-macro-arguments -std=c++17 -O3")
 
 # Set variables for the source directory, build directory, binary directory, and assets directory
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -46,15 +50,9 @@ target_include_directories(gameflix PRIVATE ${FFMPEG_INCLUDE_DIRS} ${GTEST_INCLU
 
 # Set the target properties for the "gameflix" executable, including the output directory
 set_target_properties(gameflix PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR}
-        )
+    RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR}
+)
 
 # Include the source directory as a private include directory
 target_include_directories(gameflix PRIVATE ${SRC_DIR})
-
-# Set the target properties for the "gameflix" executable again, just in case
-set_target_properties(gameflix PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR}
-        )
-
 

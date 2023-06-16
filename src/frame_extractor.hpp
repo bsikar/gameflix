@@ -8,12 +8,28 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
+/**
+ * FrameExtractor struct for extracting frames from a video file.
+ *
+ * The FrameExtractor struct allows extracting frames from a video file using
+ * the FFmpeg library.
+ * It provides functionalities to open a video file, retrieve stream
+ * information, find the video stream,
+ *
+ * initialize the video codec, and extract frames from the video stream.
+ */
 struct FrameExtractor {
-  AVFormatContext *format_context;
-  AVCodecContext *codec_context;
-  AVCodec *codec;
-  int video_stream_index;
-  int frame_count;
+  AVFormatContext
+      *format_context; /**< Pointer to the AVFormatContext struct representing
+                          the format context of the video. */
+  AVCodecContext
+      *codec_context; /**< Pointer to the AVCodecContext struct representing the
+                         codec context for decoding frames. */
+  AVCodec *
+      codec; /**< Pointer to the AVCodec struct representing the video codec. */
+  int video_stream_index; /**< Index of the video stream in the format context.
+                           */
+  int frame_count;        /**< Number of frames extracted. */
 
   /**
    * Constructor that initializes the FrameExtractor object.
@@ -30,7 +46,9 @@ struct FrameExtractor {
    */
   FrameExtractor(const std::string &video_path);
 
-  // Destructor to clean up allocated resources
+  /**
+   * Destructor to clean up allocated resources.
+   */
   ~FrameExtractor();
 
   /**
