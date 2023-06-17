@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
     std::string output_file_path = result["output_file_path"].as<std::string>();
 
     // extract frames
+    // TODO: ADD AUDIO
     FrameExtractor frame_extractor1(video_path1);
     FrameExtractor frame_extractor2(video_path2);
     int width = std::max(frame_extractor1.get_leading_zeros(),
@@ -66,6 +67,7 @@ int main(int argc, char **argv) {
     // TODO
 
     // combine frames
+    // TODO: ADD AUDIO
     FrameCombiner frame_combiner(VIDEO_TMP_DIR);
     frame_combiner.combine_frames_to_video(output_file_path);
   } catch (const std::exception &e) {
