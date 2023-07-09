@@ -8,26 +8,22 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
+namespace frame {
 /**
  * @brief Structure for extracting frames from a video.
  */
-struct FrameExtractor {
-  AVFormatContext *format_context; /**< The format context for the video. */
-  AVCodecContext *codec_context; /**< The codec context for decoding frames. */
-  AVCodec *codec;                /**< The codec used for decoding frames. */
-  int video_stream_index;        /**< The index of the video stream. */
-  int frame_count;               /**< The number of frames extracted. */
-
+class Extractor {
+public:
   /**
    * @brief Constructs a FrameExtractor object.
    * @param video_path The path to the video file.
    */
-  FrameExtractor(const std::string &video_path);
+  Extractor(const std::string &video_path);
 
   /**
    * @brief Destructor for FrameExtractor.
    */
-  ~FrameExtractor();
+  ~Extractor();
 
   /**
    * @brief Extracts frames from the video and saves them as images.
@@ -43,6 +39,11 @@ struct FrameExtractor {
   int get_leading_zeros();
 
 private:
+  AVFormatContext *format_context; /**< The format context for the video. */
+  AVCodecContext *codec_context; /**< The codec context for decoding frames. */
+  AVCodec *codec;                /**< The codec used for decoding frames. */
+  int video_stream_index;        /**< The index of the video stream. */
+  int frame_count;               /**< The number of frames extracted. */
   /**
    * @brief Finds the video stream in the format context.
    */
@@ -94,6 +95,5 @@ private:
   void encode_png_frame(AVCodecContext *png_codec_context, AVFrame *png_frame,
                         std::ofstream &output_file);
 };
-
+} // namespace frame
 #endif
-

@@ -9,21 +9,22 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
+namespace frame {
 /**
  * @brief Struct for combining frames into a video.
  */
-struct FrameCombiner {
+class Combiner {
 public:
   /**
    * @brief Constructs a FrameCombiner object.
    * @param output_dir The directory where the output video will be saved.
    */
-  FrameCombiner(const std::string &output_dir);
+  Combiner(const std::string &output_dir);
 
   /**
    * @brief Destroys the FrameCombiner object and cleans up resources.
    */
-  ~FrameCombiner();
+  ~Combiner();
 
   /**
    * @brief Combines the frames into a video file.
@@ -206,5 +207,5 @@ private:
   bool open_input_file(const std::string &file_path,
                        AVFormatContext **format_context);
 };
-
+} // namespace frame
 #endif

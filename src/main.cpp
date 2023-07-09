@@ -1,5 +1,5 @@
-#include "frame_combiner.hpp"
-#include "frame_extractor.hpp"
+#include "../includes/frame/combiner.hpp"
+#include "../includes/frame/extractor.hpp"
 #include <algorithm>
 #include <cxxopts.hpp>
 #include <filesystem>
@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
 
     // extract frames
     // TODO: ADD AUDIO
-    FrameExtractor frame_extractor1(video_path1);
-    FrameExtractor frame_extractor2(video_path2);
+    frame::Extractor frame_extractor1(video_path1);
+    frame::Extractor frame_extractor2(video_path2);
     int width = std::max(frame_extractor1.get_leading_zeros(),
                          frame_extractor2.get_leading_zeros());
     frame_extractor1.extract_frames(VIDEO_TMP_DIR, width);
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 
     // combine frames
     // TODO: ADD AUDIO
-    FrameCombiner frame_combiner(VIDEO_TMP_DIR);
+    frame::Combiner frame_combiner(VIDEO_TMP_DIR);
     frame_combiner.combine_frames_to_video(output_file_path);
   } catch (const std::exception &e) {
     std::cerr << "Error parsing options: " << e.what() << std::endl;

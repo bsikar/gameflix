@@ -17,6 +17,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wpedantic
 # Set variables for the source directory, build directory, binary directory, and assets directory
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(BUILD_DIR ${SRC_DIR}/build)
+set(INCLUDES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/includes)
 set(BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(ASSETS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 
@@ -24,8 +25,13 @@ set(ASSETS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 set(CMAKE_CXX_COMPILER "clang++")
 
 # Use file() to find all source files and header files in the source directory
-file(GLOB SRC_FILES ${SRC_DIR}/*.cpp)
+file(GLOB_RECURSE SRC_FILES ${SRC_DIR}/*.cpp)
 file(GLOB_RECURSE HEADER_FILES ${SRC_DIR}/*.h)
+file(GLOB_RECURSE ADDITIONAL_SRC_FILES ${INCLUDES_DIR}/*.cpp)
+file(GLOB_RECURSE ADDITIONAL_HEADER_FILES ${INCLUDES_DIR}/*.cpp)
+
+list(APPEND SRC_FILES ${ADDITIONAL_SRC_FILES})
+list(APPEND HEADER_FILES ${ADDITIONAL_HEADER_FILES})
 
 # Create an executable target called "gameflix" using the source and header files
 add_executable(gameflix ${SRC_FILES} ${HEADER_FILES})

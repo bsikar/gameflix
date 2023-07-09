@@ -1,4 +1,4 @@
-#include "frame_extractor.hpp"
+#include "extractor.hpp"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -14,7 +14,9 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-FrameExtractor::FrameExtractor(const std::string &video_path)
+using namespace frame;
+
+Extractor::Extractor(const std::string &video_path)
     : format_context(nullptr), codec_context(nullptr), codec(nullptr),
       video_stream_index(-1), frame_count(0) {
   // STEP 1: Retrieve the stream information from the video file
@@ -39,12 +41,12 @@ FrameExtractor::FrameExtractor(const std::string &video_path)
 }
 
 // Destructor to clean up allocated resources
-FrameExtractor::~FrameExtractor() {
+Extractor::~Extractor() {
   avcodec_free_context(&codec_context);
   avformat_close_input(&format_context);
 }
 
-int FrameExtractor::get_leading_zeros() {
+int Extractor::get_leading_zeros() {
   AVPacket packet;
   AVFrame *frame = av_frame_alloc();
 
@@ -73,7 +75,7 @@ int FrameExtractor::get_leading_zeros() {
   return width;
 }
 
-void FrameExtractor::extract_frames(const std::string &output_dir, int width) {
+void Extractor::extract_frames(const std::string &output_dir, int width) {
   AVPacket packet;
   AVFrame *frame = av_frame_alloc();
 
@@ -106,7 +108,7 @@ void FrameExtractor::extract_frames(const std::string &output_dir, int width) {
   av_frame_free(&frame);
 }
 
-void FrameExtractor::find_video_stream() {
+void Extractor::find_video_stream() {
   // STEP 1: Iterate through each stream in the format context
   for (unsigned int i = 0; i < format_context->nb_streams; i++) {
     // STEP 2: Get the codec type of the current stream
@@ -127,7 +129,7 @@ void FrameExtractor::find_video_stream() {
   }
 }
 
-void FrameExtractor::init_video_codec() {
+void Extractor::init_video_codec() {
   // STEP 1: Allocate the codec context
   codec_context = avcodec_alloc_context3(nullptr);
 
@@ -168,7 +170,7 @@ void FrameExtractor::init_video_codec() {
   }
 }
 
-void FrameExtractor::save_frame_as_image(AVFrame *frame,
+void Extractor::save_frame_as_image(AVFrame *frame,
                                          const std::string &frame_path) {
   // STEP 1: Find the PNG codec
   AVCodec *png_codec =
@@ -206,7 +208,7 @@ void FrameExtractor::save_frame_as_image(AVFrame *frame,
   avcodec_free_context(&png_codec_context);
 }
 
-AVCodecContext *FrameExtractor::initialize_png_codec_context(AVCodec *png_codec,
+AVCodecContext *Extractor::initialize_png_codec_context(AVCodec *png_codec,
                                                              AVFrame *frame) {
   // STEP 1: Allocate and initialize the PNG codec context
   AVCodecContext *png_codec_context = avcodec_alloc_context3(png_codec);
@@ -231,7 +233,7 @@ AVCodecContext *FrameExtractor::initialize_png_codec_context(AVCodec *png_codec,
   return png_codec_context;
 }
 
-AVFrame *FrameExtractor::create_png_frame(AVCodecContext *png_codec_context) {
+AVFrame *Extractor::create_png_frame(AVCodecContext *png_codec_context) {
   // STEP 1: Create a temporary frame for the PNG conversion
   AVFrame *png_frame = av_frame_alloc();
   if (!png_frame) {
@@ -256,7 +258,7 @@ AVFrame *FrameExtractor::create_png_frame(AVCodecContext *png_codec_context) {
   return png_frame;
 }
 
-void FrameExtractor::convert_frame_to_png(AVFrame *frame, AVFrame *png_frame,
+void Extractor::convert_frame_to_png(AVFrame *frame, AVFrame *png_frame,
                                           AVCodecContext *png_codec_context) {
   // STEP 1: Create the frame conversion context
   SwsContext *sws_context = sws_getContext(
@@ -279,7 +281,7 @@ void FrameExtractor::convert_frame_to_png(AVFrame *frame, AVFrame *png_frame,
   sws_freeContext(sws_context);
 }
 
-void FrameExtractor::encode_png_frame(AVCodecContext *png_codec_context,
+void Extractor::encode_png_frame(AVCodecContext *png_codec_context,
                                       AVFrame *png_frame,
                                       std::ofstream &output_file) {
   // STEP 1: Allocate the PNG packet

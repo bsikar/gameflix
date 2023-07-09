@@ -1,4 +1,4 @@
-#include "frame_combiner.hpp"
+#include "combiner.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -17,13 +17,15 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-FrameCombiner::FrameCombiner(const std::string &png_dir)
+using namespace frame;
+
+Combiner::Combiner(const std::string &png_dir)
     : png_dir(png_dir), frames(), png_files(), format_context_(nullptr),
       codec_context_(nullptr), stream_(nullptr), frame_(nullptr) {}
 
-FrameCombiner::~FrameCombiner() { cleanup_resources(); }
+Combiner::~Combiner() { cleanup_resources(); }
 
-void FrameCombiner::combine_frames_to_video(
+void Combiner::combine_frames_to_video(
     const std::string &output_filename) {
   // STEP 1: Set up video codec
   setup_video_codec();
@@ -44,7 +46,7 @@ void FrameCombiner::combine_frames_to_video(
   write_trailer();
 }
 
-void FrameCombiner::get_png_files_in_dir() {
+void Combiner::get_png_files_in_dir() {
   std::filesystem::path path(png_dir);
 
   // STEP 1: Check if the directory exists and is a valid directory
@@ -66,9 +68,9 @@ void FrameCombiner::get_png_files_in_dir() {
   std::sort(png_files.begin(), png_files.end());
 }
 
-void FrameCombiner::write_trailer() { av_write_trailer(format_context_); }
+void Combiner::write_trailer() { av_write_trailer(format_context_); }
 
-void FrameCombiner::open_output_file(const std::string &output_filename) {
+void Combiner::open_output_file(const std::string &output_filename) {
   // STEP 1: Create the format context
   if (avformat_alloc_output_context2(&format_context_, nullptr, nullptr,
                                      output_filename.c_str()) < 0) {
@@ -108,7 +110,7 @@ void FrameCombiner::open_output_file(const std::string &output_filename) {
   }
 }
 
-void FrameCombiner::setup_video_codec() {
+void Combiner::setup_video_codec() {
   // STEP 1: Find the video encoder
   const AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_H264);
   if (!codec) {
@@ -140,7 +142,7 @@ void FrameCombiner::setup_video_codec() {
   }
 }
 
-void FrameCombiner::cleanup_resources() {
+void Combiner::cleanup_resources() {
   // STEP 1: Free the codec context
   avcodec_free_context(&codec_context_);
 
@@ -156,7 +158,7 @@ void FrameCombiner::cleanup_resources() {
   av_frame_free(&frame_);
 }
 
-void FrameCombiner::process_frames() {
+void Combiner::process_frames() {
   // STEP 1: Set up the frame
   AVFrame *frame = setup_frame();
   if (!frame) {
@@ -195,7 +197,7 @@ void FrameCombiner::process_frames() {
   av_frame_free(&frame);
 }
 
-AVFrame *FrameCombiner::convert_pixel_format(AVFrame *frame) {
+AVFrame *Combiner::convert_pixel_format(AVFrame *frame) {
   // STEP 1: Allocate memory for the converted frame
   AVFrame *converted_frame = av_frame_alloc();
   if (!converted_frame) {
@@ -235,7 +237,7 @@ AVFrame *FrameCombiner::convert_pixel_format(AVFrame *frame) {
   return converted_frame;
 }
 
-AVFrame *FrameCombiner::setup_frame() {
+AVFrame *Combiner::setup_frame() {
   // STEP 1: Allocate memory for the frame
   AVFrame *frame = av_frame_alloc();
   if (!frame) {
@@ -258,7 +260,7 @@ AVFrame *FrameCombiner::setup_frame() {
   return frame;
 }
 
-void FrameCombiner::set_current_frame(AVFrame *frame, AVFrame *currentFrame) {
+void Combiner::set_current_frame(AVFrame *frame, AVFrame *currentFrame) {
   // STEP 1: Set the frame data
   frame->data[0] = currentFrame->data[0];
   frame->data[1] = currentFrame->data[1];
@@ -270,7 +272,7 @@ void FrameCombiner::set_current_frame(AVFrame *frame, AVFrame *currentFrame) {
   frame->linesize[2] = currentFrame->linesize[2];
 }
 
-void FrameCombiner::convert_pngs_to_frames() {
+void Combiner::convert_pngs_to_frames() {
   unsigned int i = 0;
   for (const auto &png_file : png_files) {
 
@@ -303,7 +305,7 @@ void FrameCombiner::convert_pngs_to_frames() {
   }
 }
 
-AVFrame *FrameCombiner::rescale_frame_if_necessary(AVFrame *frame) {
+AVFrame *Combiner::rescale_frame_if_necessary(AVFrame *frame) {
   // STEP 1: Check if the frame size matches
   if (!is_frame_size_matching(frame)) {
     // STEP 2: Allocate a rescaled frame
@@ -344,7 +346,7 @@ AVFrame *FrameCombiner::rescale_frame_if_necessary(AVFrame *frame) {
   return frame;
 }
 
-bool FrameCombiner::encode_and_write_frame(AVFrame *frame) {
+bool Combiner::encode_and_write_frame(AVFrame *frame) {
   // STEP 1: Allocate a packet for the encoded frame
   AVPacket *packet = av_packet_alloc();
 
@@ -383,12 +385,12 @@ bool FrameCombiner::encode_and_write_frame(AVFrame *frame) {
   return true;
 }
 
-bool FrameCombiner::is_frame_size_matching(const AVFrame *frame) const {
+bool Combiner::is_frame_size_matching(const AVFrame *frame) const {
   return (frame->width == codec_context_->width &&
           frame->height == codec_context_->height);
 }
 
-AVFrame *FrameCombiner::allocate_rescaled_frame() const {
+AVFrame *Combiner::allocate_rescaled_frame() const {
   // STEP 1: Allocate a new AVFrame for the rescaled frame
   AVFrame *rescaled_frame = av_frame_alloc();
 
@@ -417,7 +419,7 @@ AVFrame *FrameCombiner::allocate_rescaled_frame() const {
   return rescaled_frame;
 }
 
-bool FrameCombiner::init_rescaled_frame(AVFrame *frame) const {
+bool Combiner::init_rescaled_frame(AVFrame *frame) const {
   // STEP 1: Initialize the image converter (SWSContext)
   SwsContext *swsContext = sws_getContext(
       frame->width, frame->height, static_cast<AVPixelFormat>(frame->format),
@@ -438,7 +440,7 @@ bool FrameCombiner::init_rescaled_frame(AVFrame *frame) const {
   return true;
 }
 
-bool FrameCombiner::scale_frame(const AVFrame *src_frame,
+bool Combiner::scale_frame(const AVFrame *src_frame,
                                 AVFrame *dst_frame) const {
   // STEP 1: Initialize the image converter (SWSContext)
   SwsContext *swsContext = sws_getContext(
@@ -464,7 +466,7 @@ bool FrameCombiner::scale_frame(const AVFrame *src_frame,
   return true;
 }
 
-AVFrame *FrameCombiner::convert_png_to_av_frame(const std::string &file_path) {
+AVFrame *Combiner::convert_png_to_av_frame(const std::string &file_path) {
   // STEP 1: Open the input file
   AVFormatContext *format_context = nullptr;
   if (!open_input_file(file_path, &format_context)) {
@@ -526,7 +528,7 @@ AVFrame *FrameCombiner::convert_png_to_av_frame(const std::string &file_path) {
   return frame;
 }
 
-bool FrameCombiner::open_input_file(const std::string &file_path,
+bool Combiner::open_input_file(const std::string &file_path,
                                     AVFormatContext **format_context) {
   if (avformat_open_input(format_context, file_path.c_str(), nullptr,
                           nullptr) != 0) {
@@ -536,7 +538,7 @@ bool FrameCombiner::open_input_file(const std::string &file_path,
   return true;
 }
 
-bool FrameCombiner::retrieve_stream_info(AVFormatContext *format_context) {
+bool Combiner::retrieve_stream_info(AVFormatContext *format_context) {
   if (avformat_find_stream_info(format_context, nullptr) < 0) {
     std::cerr << "Failed to retrieve stream information." << std::endl;
     avformat_close_input(&format_context);
@@ -545,7 +547,7 @@ bool FrameCombiner::retrieve_stream_info(AVFormatContext *format_context) {
   return true;
 }
 
-int FrameCombiner::find_video_stream(AVFormatContext *format_context) {
+int Combiner::find_video_stream(AVFormatContext *format_context) {
   int video_stream_index = av_find_best_stream(
       format_context, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
   if (video_stream_index < 0) {
@@ -555,7 +557,7 @@ int FrameCombiner::find_video_stream(AVFormatContext *format_context) {
   return video_stream_index;
 }
 
-const AVCodec *FrameCombiner::find_decoder(AVCodecID codec_id) {
+const AVCodec *Combiner::find_decoder(AVCodecID codec_id) {
   const AVCodec *codec = avcodec_find_decoder(codec_id);
   if (!codec) {
     std::cerr << "Failed to find decoder." << std::endl;
@@ -564,7 +566,7 @@ const AVCodec *FrameCombiner::find_decoder(AVCodecID codec_id) {
 }
 
 AVCodecContext *
-FrameCombiner::create_codec_context(const AVCodec *codec,
+Combiner::create_codec_context(const AVCodec *codec,
                                     AVCodecParameters *codec_parameters) {
   // STEP 1: Create and initialize codec context
   AVCodecContext *codec_context = avcodec_alloc_context3(codec);
@@ -589,7 +591,7 @@ FrameCombiner::create_codec_context(const AVCodec *codec,
   return codec_context;
 }
 
-AVFrame *FrameCombiner::create_frame() {
+AVFrame *Combiner::create_frame() {
   AVFrame *frame = av_frame_alloc();
   if (!frame) {
     std::cerr << "Failed to allocate frame." << std::endl;
@@ -598,7 +600,7 @@ AVFrame *FrameCombiner::create_frame() {
 
   return frame;
 }
-bool FrameCombiner::decode_frames(AVFormatContext *format_context,
+bool Combiner::decode_frames(AVFormatContext *format_context,
                                   AVCodecContext *codec_context, AVFrame *frame,
                                   int video_stream_index) {
   AVPacket packet;
